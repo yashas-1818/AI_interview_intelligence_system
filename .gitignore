@@ -1,0 +1,23 @@
+# Virtual environment
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Environment variables
+.env
+
+# Recordings
+*.mp4
+*.webm
+*.wav
+*.mp3
+
+# Generated data
+mock_interview/storage/recordings/
+mock_interview/storage/transcripts/
+mock_interview/storage/reports/
+
+# IDE
+.vscode/

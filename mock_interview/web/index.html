@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Powered Interview Intelligence System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-base: #080c14;
+            --bg-surface: #0f172a;
+            --bg-surface-elevated: #1e293b;
+            --bg-surface-card: rgba(15, 23, 42, 0.75);
+            --border-subtle: #334155;
+            --border-focus: #38bdf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-cyan: #06b6d4;
+            --accent-sky: #38bdf8;
+            --accent-violet: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --shadow-glow: 0 0 25px rgba(56, 189, 248, 0.15);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
+        }
+
+        /* Container */
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+
+        /* Navigation Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--bg-surface-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            margin-bottom: 28px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-sky), var(--accent-violet));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+        }
+
+        .brand-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(90deg, #f8fafc, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 999px;
+            font-size: 0.8rem;
+            color: var(--accent-emerald);
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        /* Stage Stepper */
+        .stage-stepper {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .step-item {
+            padding: 14px 16px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            opacity: 0.55;
+        }
+
+        .step-item.active {
+            opacity: 1;
+            border-color: var(--accent-sky);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.1);
+        }
+
+        .step-item.completed {
+            opacity: 0.9;
+            border-color: var(--accent-emerald);
+        }
+
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-surface-elevated);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .step-item.active .step-num {
+            background: var(--accent-sky);
+            color: #0f172a;
+        }
+
+        .step-item.completed .step-num {
+            background: var(--accent-emerald);
+            color: #0f172a;
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Stage Cards & Layout */
+        .stage-view {
+            display: none;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .stage-view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-surface-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-sky), var(--accent-violet));
+            color: #ffffff;
+            box-shadow: 0 4px 18px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(56, 189, 248, 0.35);
+        }
+
+        .btn-secondary {
+            background: var(--bg-surface-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: #273549;
+            border-color: #475569;
+        }
+
+        .btn-danger {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(244, 63, 94, 0.25);
+        }
+
+        /* Stage 1: Setup Elements */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 36px 24px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.4);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent-sky);
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        .dropzone-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            color: var(--accent-sky);
+        }
+
+        .preset-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .preset-card {
+            padding: 16px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-card:hover, .preset-card.selected {
+            border-color: var(--accent-sky);
+            background: rgba(30, 41, 59, 0.6);
+        }
+
+        .preset-card.selected {
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.15);
+        }
+
+        .preset-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .preset-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        textarea.input-box {
+            width: 100%;
+            min-height: 120px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            margin-top: 8px;
+        }
+
+        textarea.input-box:focus {
+            outline: none;
+            border-color: var(--accent-sky);
+        }
+
+        /* Chips */
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .chip {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        .chip-matched {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .chip-gap {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .chip-neutral {
+            background: var(--bg-surface-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* Roadmap Pills */
+        .roadmap-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 8px 0 16px;
+        }
+
+        .roadmap-pill {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+
+        .roadmap-pill.current {
+            border-color: var(--accent-sky);
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent-sky);
+        }
+
+        .roadmap-pill.done {
+            border-color: var(--accent-emerald);
+            color: var(--accent-emerald);
+        }
+
+        /* Stage 3: Live Interview Room */
+        .interview-meta-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+        }
+
+        .meta-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .meta-badge {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .diff-indicator {
+            color: var(--accent-amber);
+            letter-spacing: 2px;
+        }
+
+        .interviewer-box {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 24px;
+            align-items: flex-start;
+        }
+
+        .avatar-box {
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #0284c7, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.3);
+        }
+
+        .speech-bubble {
+            flex-grow: 1;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg);
+            padding: 24px;
+            position: relative;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            line-height: 1.5;
+        }
+
+        /* Live Feedback Card */
+        .feedback-toast {
+            display: none;
+            padding: 12px 18px;
+            border-radius: var(--radius-md);
+            background: rgba(15, 23, 42, 0.9);
+            border-left: 4px solid var(--accent-sky);
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+
+        .candidate-input-box {
+            width: 100%;
+            min-height: 140px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            resize: vertical;
+        }
+
+        .candidate-input-box:focus {
+            outline: none;
+            border-color: var(--accent-sky);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.15);
+        }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Voice Mic Button */
+        .mic-btn {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            border-radius: 999px;
+            padding: 10px 18px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .mic-btn.listening {
+            border-color: var(--accent-rose);
+            color: var(--accent-rose);
+            background: rgba(244, 63, 94, 0.15);
+            animation: pulse-mic 1.5s infinite;
+        }
+
+        @keyframes pulse-mic {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+        }
+
+        /* Stage 4: Report Elements */
+        .score-hero {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 32px;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .score-circle {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent-sky) 0deg, var(--accent-violet) 260deg, var(--bg-surface-elevated) 260deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+        }
+
+        .score-inner {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-num {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .score-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .competency-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .comp-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .bar-track {
+            height: 10px;
+            border-radius: 999px;
+            background: var(--bg-surface-elevated);
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-sky), var(--accent-violet));
+            transition: width 1s ease;
+        }
+
+        .recs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .rec-item {
+            padding: 12px 16px;
+            background: var(--bg-surface);
+            border-left: 3px solid var(--accent-sky);
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            font-size: 0.88rem;
+        }
+
+        /* Utilities */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .setup-grid, .score-hero {
+                grid-template-columns: 1fr;
+            }
+            .stage-stepper {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">⚡</div>
+            <div>
+                <h1 class="brand-title">AI Interview Intelligence System</h1>
+                <div class="brand-subtitle">Adaptive Evaluation Platform</div>
+            </div>
+        </div>
+        <div class="header-meta">
+            <div class="status-pill">
+                <span class="status-dot"></span>
+                <span id="system-status">System Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stage Stepper -->
+    <div class="stage-stepper">
+        <div class="step-item active" id="step-nav-1">
+            <div class="step-num">1</div>
+            <div class="step-label">Setup & Profiling</div>
+        </div>
+        <div class="step-item" id="step-nav-2">
+            <div class="step-num">2</div>
+            <div class="step-label">Match Intelligence</div>
+        </div>
+        <div class="step-item" id="step-nav-3">
+            <div class="step-num">3</div>
+            <div class="step-label">Live Interview</div>
+        </div>
+        <div class="step-item" id="step-nav-4">
+            <div class="step-num">4</div>
+            <div class="step-label">Intelligence Report</div>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STAGE 1: SETUP                                                -->
+    <!-- ============================================================= -->
+    <div class="stage-view active" id="stage-setup">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Candidate & Role Setup</h2>
+                <p class="card-desc">Upload a candidate resume PDF and choose a target role to generate a personalized interview roadmap.</p>
+            </div>
+
+            <div class="setup-grid">
+                <!-- Resume Selection -->
+                <div>
+                    <h3 style="font-size: 1rem; margin-bottom: 12px;">Candidate Resume</h3>
+                    <div class="dropzone" id="resume-dropzone">
+                        <div class="dropzone-icon">📄</div>
+                        <div style="font-weight: 600;" id="resume-file-name">Click or Drag & Drop PDF Resume</div>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Supports standard resume formats (PDF)</p>
+                        <input type="file" id="resume-file-input" accept=".pdf" style="display: none;">
+                    </div>
+                    <div style="margin-top: 12px; text-align: center;">
+                        <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 8px 16px;" id="btn-use-sample-resume">
+                            ✨ Use Built-in Sample Resume (H S Yashas Gowda)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Job Selection -->
+                <div>
+                    <h3 style="font-size: 1rem; margin-bottom: 12px;">Target Job Description</h3>
+                    <div class="preset-list">
+                        <div class="preset-card selected" data-preset="1">
+                            <div class="preset-title">AI / ML Engineer (Target Preset)</div>
+                            <div class="preset-desc">Python, Machine Learning, NLP, PyTorch/TensorFlow, SQL</div>
+                        </div>
+                        <div class="preset-card" data-preset="2">
+                            <div class="preset-title">Full Stack Software Engineer</div>
+                            <div class="preset-desc">Python, JavaScript, REST APIs, FastAPI, PostgreSQL, Docker</div>
+                        </div>
+                        <div class="preset-card" data-preset="3">
+                            <div class="preset-title">Data Scientist</div>
+                            <div class="preset-desc">Python, Statistics, Modeling, Pandas, SQL, Visualization</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 14px;">
+                        <label style="font-size: 0.8rem; color: var(--text-secondary);">Or Paste Custom Job Description:</label>
+                        <textarea class="input-box" id="custom-job-input" placeholder="Paste custom job specifications or leave blank to use selected preset..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 28px; text-align: right;">
+                <button class="btn btn-primary" id="btn-analyze-setup">
+                    <span>Analyze Match & Build Strategy</span>
+                    <span>→</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STAGE 2: MATCH INTELLIGENCE                                   -->
+    <!-- ============================================================= -->
+    <div class="stage-view" id="stage-match">
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 class="card-title">Candidate-Job Match Analysis</h2>
+                    <p class="card-desc" id="match-candidate-title">Evaluating fit for AI/ML Engineer</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Required Skill Match</div>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--accent-sky);" id="match-pct-display">66.7%</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+                <div style="background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+                    <h4 style="color: var(--accent-emerald); font-size: 0.9rem; margin-bottom: 10px;">✓ Matched Required Skills</h4>
+                    <div class="chips-container" id="matched-skills-chips"></div>
+                </div>
+                <div style="background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+                    <h4 style="color: var(--accent-amber); font-size: 0.9rem; margin-bottom: 10px;">⚠ Identified Skill Gaps (To Probe)</h4>
+                    <div class="chips-container" id="missing-skills-chips"></div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <h4 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--text-secondary);">Formulated Interview Roadmap:</h4>
+                <div class="roadmap-container" id="match-roadmap"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 20px;">
+                <button class="btn btn-secondary" onclick="switchStage(1)">← Back to Setup</button>
+                <button class="btn btn-primary" id="btn-start-interview">
+                    <span>Enter Live Interview Room</span>
+                    <span>→</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STAGE 3: LIVE INTERVIEW                                       -->
+    <!-- ============================================================= -->
+    <div class="stage-view" id="stage-interview">
+        <div class="card">
+            <!-- Meta Bar -->
+            <div class="interview-meta-bar">
+                <div class="meta-group">
+                    <div class="meta-badge">
+                        <span style="color: var(--text-muted);">Domain:</span>
+                        <span style="color: var(--accent-sky);" id="interview-current-category">INTRODUCTION</span>
+                    </div>
+                    <div class="meta-badge">
+                        <span style="color: var(--text-muted);">Difficulty:</span>
+                        <span class="diff-indicator" id="interview-current-diff">★☆☆☆☆ (Level 1)</span>
+                    </div>
+                </div>
+                <div class="meta-group">
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" id="btn-toggle-voice">
+                        🔊 Voice: ON
+                    </button>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);" id="interview-question-counter">Question 1</span>
+                </div>
+            </div>
+
+            <!-- Interviewer Question -->
+            <div class="interviewer-box">
+                <div class="avatar-box">🤖</div>
+                <div class="speech-bubble">
+                    <div style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">
+                        AI Technical Interviewer
+                    </div>
+                    <div class="question-text" id="interview-question-text">
+                        Loading initial question...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Feedback Toast -->
+            <div class="feedback-toast" id="feedback-toast">
+                <span id="feedback-toast-text">Analyzing previous answer...</span>
+            </div>
+
+            <!-- Candidate Answer Box -->
+            <div>
+                <textarea class="candidate-input-box" id="candidate-answer-input" placeholder="Type your answer here... (Tip: Press Ctrl+Enter to submit, or use the microphone)"></textarea>
+                <div class="input-actions">
+                    <button class="mic-btn" id="btn-mic">
+                        <span>🎙️</span>
+                        <span id="mic-status-text">Dictate Answer</span>
+                    </button>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-secondary" id="btn-skip-question">Skip</button>
+                        <button class="btn btn-danger" id="btn-conclude-early">End & Evaluate</button>
+                        <button class="btn btn-primary" id="btn-submit-answer">
+                            <span>Submit Answer</span>
+                            <span>↵</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STAGE 4: INTELLIGENCE REPORT                                  -->
+    <!-- ============================================================= -->
+    <div class="stage-view" id="stage-report">
+        <div class="card">
+            <div class="score-hero">
+                <div class="score-circle">
+                    <div class="score-inner">
+                        <div class="score-num" id="report-overall-score">72</div>
+                        <div class="score-sub">Overall Score</div>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase;" id="report-candidate-header">
+                        Candidate Assessment
+                    </div>
+                    <h2 class="card-title" style="font-size: 1.8rem; margin: 4px 0 8px;" id="report-tier-display">
+                        Proficient / Solid Candidate
+                    </h2>
+                    <p class="card-desc" id="report-summary-text">
+                        Demonstrated solid technical grasp, clear communication, and practical engineering experience.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Competency Matrix -->
+            <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Core Competency Breakdown</h3>
+                <div class="competency-bars">
+                    <div>
+                        <div class="comp-header"><span>Technical Knowledge</span><span id="score-tk">78%</span></div>
+                        <div class="bar-track"><div class="bar-fill" id="bar-tk" style="width: 78%;"></div></div>
+                    </div>
+                    <div>
+                        <div class="comp-header"><span>Communication & Clarity</span><span id="score-comm">70%</span></div>
+                        <div class="bar-track"><div class="bar-fill" id="bar-comm" style="width: 70%;"></div></div>
+                    </div>
+                    <div>
+                        <div class="comp-header"><span>Relevance & Alignment</span><span id="score-rel">68%</span></div>
+                        <div class="bar-track"><div class="bar-fill" id="bar-rel" style="width: 68%;"></div></div>
+                    </div>
+                    <div>
+                        <div class="comp-header"><span>Completeness</span><span id="score-comp">65%</span></div>
+                        <div class="bar-track"><div class="bar-fill" id="bar-comp" style="width: 65%;"></div></div>
+                    </div>
+                    <div>
+                        <div class="comp-header"><span>Problem Solving</span><span id="score-ps">75%</span></div>
+                        <div class="bar-track"><div class="bar-fill" id="bar-ps" style="width: 75%;"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strengths & Recommendations -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div style="background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+                    <h4 style="color: var(--accent-emerald); margin-bottom: 12px;">🌟 Key Strengths</h4>
+                    <div id="report-strengths-list"></div>
+                </div>
+                <div style="background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+                    <h4 style="color: var(--accent-amber); margin-bottom: 12px;">💡 Actionable Recommendations</h4>
+                    <div class="recs-list" id="report-recs-list"></div>
+                </div>
+            </div>
+
+            <!-- Performance Spotlights: Best vs Growth Areas -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;" id="spotlights-container">
+                <div style="background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+                    <h4 style="color: var(--accent-emerald); margin-bottom: 12px;">🏆 Strongest Responses Spotlight</h4>
+                    <div id="report-strongest-list"></div>
+                </div>
+                <div style="background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+                    <h4 style="color: var(--accent-amber); margin-bottom: 12px;">🎯 Growth Opportunities Spotlight</h4>
+                    <div id="report-weakest-list"></div>
+                </div>
+            </div>
+
+            <!-- Interview Journey Timeline -->
+            <div style="margin-bottom: 24px;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Interview Journey Timeline</h3>
+                <div style="overflow-x: auto; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;" id="journey-table">
+                        <thead>
+                            <tr style="text-align: left; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle);">
+                                <th style="padding: 8px;">#</th>
+                                <th style="padding: 8px;">Domain</th>
+                                <th style="padding: 8px;">Question</th>
+                                <th style="padding: 8px;">Score</th>
+                                <th style="padding: 8px;">Diff</th>
+                                <th style="padding: 8px;">Outcome</th>
+                            </tr>
+                        </thead>
+                        <tbody id="journey-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 30-60-90 Day Action Plan -->
+            <div style="margin-bottom: 28px;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Personalized 30-60-90 Day Action Plan</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;" id="action-plan-container">
+                    <div style="background: var(--bg-surface); padding: 16px; border-radius: var(--radius-lg); border-top: 3px solid var(--accent-cyan);">
+                        <h5 style="color: var(--accent-cyan); margin: 0 0 10px;">Days 1-30: Foundation</h5>
+                        <div id="plan-30" style="font-size: 0.8rem; color: var(--text-secondary);"></div>
+                    </div>
+                    <div style="background: var(--bg-surface); padding: 16px; border-radius: var(--radius-lg); border-top: 3px solid var(--accent-purple);">
+                        <h5 style="color: var(--accent-purple); margin: 0 0 10px;">Days 31-60: Production</h5>
+                        <div id="plan-60" style="font-size: 0.8rem; color: var(--text-secondary);"></div>
+                    </div>
+                    <div style="background: var(--bg-surface); padding: 16px; border-radius: var(--radius-lg); border-top: 3px solid var(--accent-emerald);">
+                        <h5 style="color: var(--accent-emerald); margin: 0 0 10px;">Days 61-90: Mastery</h5>
+                        <div id="plan-90" style="font-size: 0.8rem; color: var(--text-secondary);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Buttons -->
+            <div style="display: flex; gap: 16px; justify-content: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 20px;">
+                <a href="#" class="btn btn-secondary" id="btn-download-md" target="_blank">📄 Download Markdown Report</a>
+                <a href="#" class="btn btn-primary" id="btn-view-html" target="_blank">📊 Open Full Interactive HTML Dashboard</a>
+                <button class="btn btn-secondary" onclick="switchStage(1)">🔄 Start New Session</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State management
+    let state = {
+        sessionId: null,
+        selectedPreset: '1',
+        uploadedFile: null,
+        voiceEnabled: true,
+        isListening: false,
+        questionIndex: 1,
+    };
+
+    // Stage navigation
+    function switchStage(stageNum) {
+        document.querySelectorAll('.stage-view').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.step-item').forEach((el, idx) => {
+            el.classList.remove('active');
+            if (idx + 1 < stageNum) el.classList.add('completed');
+        });
+
+        const target = document.getElementById(`stage-${['setup', 'match', 'interview', 'report'][stageNum - 1]}`);
+        if (target) target.classList.add('active');
+        const navItem = document.getElementById(`step-nav-${stageNum}`);
+        if (navItem) navItem.classList.add('active');
+    }
+
+    // Preset selection
+    document.querySelectorAll('.preset-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            state.selectedPreset = card.dataset.preset;
+        });
+    });
+
+    // Resume Dropzone
+    const dropzone = document.getElementById('resume-dropzone');
+    const fileInput = document.getElementById('resume-file-input');
+    const fileNameDisplay = document.getElementById('resume-file-name');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            state.uploadedFile = e.target.files[0];
+            fileNameDisplay.textContent = `Selected: ${state.uploadedFile.name}`;
+        }
+    });
+
+    document.getElementById('btn-use-sample-resume').addEventListener('click', () => {
+        state.uploadedFile = null;
+        fileNameDisplay.textContent = 'Using Built-in Sample Resume (resume.pdf)';
+    });
+
+    // Stage 1 -> 2: Analyze Setup
+    document.getElementById('btn-analyze-setup').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-analyze-setup');
+        btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+        btn.disabled = true;
+
+        try {
+            // Upload Resume
+            const formData = new FormData();
+            if (state.uploadedFile) {
+                formData.append('file', state.uploadedFile);
+            }
+            const resUpload = await fetch('/api/upload-resume', { method: 'POST', body: formData });
+            const dataUpload = await resUpload.json();
+            if (!dataUpload.success) throw new Error(dataUpload.detail || 'Upload failed');
+            state.sessionId = dataUpload.session_id;
+
+            // Setup Job
+            const customJob = document.getElementById('custom-job-input').value;
+            const resJob = await fetch('/api/setup-job', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    job_preset: state.selectedPreset,
+                    job_description: customJob,
+                    session_id: state.sessionId
+                })
+            });
+            const dataJob = await resJob.json();
+            if (!dataJob.success) throw new Error(dataJob.detail || 'Job setup failed');
+
+            // Render Match UI
+            renderMatchIntelligence(dataUpload.candidate, dataJob);
+            switchStage(2);
+        } catch (err) {
+            alert('Setup failed: ' + err.message);
+        } finally {
+            btn.innerHTML = '<span>Analyze Match & Build Strategy</span> <span>→</span>';
+            btn.disabled = false;
+        }
+    });
+
+    function renderMatchIntelligence(candidate, jobData) {
+        document.getElementById('match-candidate-title').textContent = 
+            `Evaluating ${candidate.name} for ${jobData.job_profile.role_title}`;
+        document.getElementById('match-pct-display').textContent = 
+            `${jobData.match_report.match_percentage.toFixed(1)}%`;
+
+        // Matched skills chips
+        const matchedContainer = document.getElementById('matched-skills-chips');
+        matchedContainer.innerHTML = '';
+        (jobData.match_report.matched_required || []).forEach(s => {
+            const span = document.createElement('span');
+            span.className = 'chip chip-matched';
+            span.textContent = s;
+            matchedContainer.appendChild(span);
+        });
+
+        // Gap skills chips
+        const gapContainer = document.getElementById('missing-skills-chips');
+        gapContainer.innerHTML = '';
+        (jobData.match_report.missing_required || []).forEach(s => {
+            const span = document.createElement('span');
+            span.className = 'chip chip-gap';
+            span.textContent = s;
+            gapContainer.appendChild(span);
+        });
+
+        // Roadmap
+        const roadContainer = document.getElementById('match-roadmap');
+        roadContainer.innerHTML = '';
+        (jobData.strategy.categories || []).forEach((cat, idx) => {
+            const pill = document.createElement('div');
+            pill.className = `roadmap-pill ${idx === 0 ? 'current' : ''}`;
+            pill.textContent = `${idx + 1}. ${cat.replace('_', ' ').toUpperCase()}`;
+            roadContainer.appendChild(pill);
+        });
+    }
+
+    // Stage 2 -> 3: Start Interview
+    document.getElementById('btn-start-interview').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-start-interview');
+        btn.innerHTML = '<span class="spinner"></span> Starting...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/start-interview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: state.sessionId, use_llm: true })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.detail || 'Failed to start interview');
+
+            displayQuestion(data.question, data.category, data.difficulty);
+            switchStage(3);
+        } catch (err) {
+            alert('Start error: ' + err.message);
+        } finally {
+            btn.innerHTML = '<span>Enter Live Interview Room</span> <span>→</span>';
+            btn.disabled = false;
+        }
+    });
+
+    function displayQuestion(questionText, category, difficulty) {
+        document.getElementById('interview-question-text').textContent = questionText;
+        document.getElementById('interview-current-category').textContent = (category || 'GENERAL').toUpperCase();
+        
+        const stars = '★'.repeat(difficulty || 1) + '☆'.repeat(5 - (difficulty || 1));
+        document.getElementById('interview-current-diff').textContent = `${stars} (Level ${difficulty || 1})`;
+        document.getElementById('interview-question-counter').textContent = `Question ${state.questionIndex}`;
+
+        if (state.voiceEnabled && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(questionText);
+            utterance.rate = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // Submit Answer
+    document.getElementById('btn-submit-answer').addEventListener('click', () => submitCandidateAnswer());
+    document.getElementById('candidate-answer-input').addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') submitCandidateAnswer();
+    });
+
+    document.getElementById('btn-skip-question').addEventListener('click', () => skipCandidateQuestion());
+
+    async function skipCandidateQuestion() {
+        const btn = document.getElementById('btn-skip-question');
+        const origText = btn.textContent;
+        btn.innerHTML = '<span class="spinner"></span> Skipping...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/skip-question', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: state.sessionId })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.detail || 'Failed to skip question');
+
+            document.getElementById('candidate-answer-input').value = '';
+            state.questionIndex++;
+
+            // Show feedback toast
+            const toast = document.getElementById('feedback-toast');
+            document.getElementById('feedback-toast-text').textContent = 
+                `Question skipped. Moving to next topic/question. | Difficulty: Level ${data.current_difficulty}`;
+            toast.style.display = 'block';
+
+            if (!data.is_active || !data.next_question) {
+                concludeInterview();
+            } else {
+                displayQuestion(data.next_question, data.current_category, data.current_difficulty);
+            }
+        } catch (err) {
+            alert('Skip error: ' + err.message);
+        } finally {
+            btn.textContent = origText;
+            btn.disabled = false;
+        }
+    }
+
+    async function submitCandidateAnswer(forcedAnswer = null) {
+        const input = document.getElementById('candidate-answer-input');
+        const answer = forcedAnswer || input.value.trim();
+        if (!answer) {
+            alert('Please provide an answer or click Skip.');
+            return;
+        }
+
+        const btn = document.getElementById('btn-submit-answer');
+        btn.innerHTML = '<span class="spinner"></span> Evaluating...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/submit-answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: state.sessionId, answer: answer })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.detail || 'Failed to process answer');
+
+            input.value = '';
+            state.questionIndex++;
+
+            // Show feedback toast
+            const toast = document.getElementById('feedback-toast');
+            const score = data.previous_turn.assessment.score;
+            const quality = data.previous_turn.assessment.quality;
+            document.getElementById('feedback-toast-text').textContent = 
+                `Previous Answer: Score: ${score.toFixed(1)}/100 (${quality}) | Difficulty: Level ${data.current_difficulty}`;
+            toast.style.display = 'block';
+
+            if (!data.is_active || !data.next_question) {
+                // Conclude
+                concludeInterview();
+            } else {
+                displayQuestion(data.next_question, data.current_category, data.current_difficulty);
+            }
+        } catch (err) {
+            alert('Answer error: ' + err.message);
+        } finally {
+            btn.innerHTML = '<span>Submit Answer</span> <span>↵</span>';
+            btn.disabled = false;
+        }
+    }
+
+    // Conclude Interview
+    document.getElementById('btn-conclude-early').addEventListener('click', () => {
+        if (confirm('Conclude the interview early and generate intelligence report?')) {
+            concludeInterview();
+        }
+    });
+
+    async function concludeInterview() {
+        const toast = document.getElementById('feedback-toast');
+        toast.style.display = 'block';
+        document.getElementById('feedback-toast-text').textContent = 'Generating comprehensive interview evaluation & report...';
+
+        try {
+            const res = await fetch('/api/end-interview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: state.sessionId })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.detail || 'Evaluation failed');
+
+            renderReport(data.evaluation, data.reports);
+            switchStage(4);
+        } catch (err) {
+            alert('Report error: ' + err.message);
+        }
+    }
+
+    function renderReport(evalData, reportsData) {
+        document.getElementById('report-overall-score').textContent = Math.round(evalData.overall_score);
+        document.getElementById('report-tier-display').textContent = evalData.performance_tier;
+        document.getElementById('report-candidate-header').textContent = `${evalData.candidate_name} • ${evalData.role}`;
+
+        // Competencies
+        const comps = evalData.competency_scores;
+        document.getElementById('score-tk').textContent = `${comps.technical_knowledge}%`;
+        document.getElementById('bar-tk').style.width = `${comps.technical_knowledge}%`;
+        document.getElementById('score-comm').textContent = `${comps.communication}%`;
+        document.getElementById('bar-comm').style.width = `${comps.communication}%`;
+        document.getElementById('score-rel').textContent = `${comps.relevance}%`;
+        document.getElementById('bar-rel').style.width = `${comps.relevance}%`;
+        document.getElementById('score-comp').textContent = `${comps.completeness}%`;
+        document.getElementById('bar-comp').style.width = `${comps.completeness}%`;
+        document.getElementById('score-ps').textContent = `${comps.problem_solving}%`;
+        document.getElementById('bar-ps').style.width = `${comps.problem_solving}%`;
+
+        // Strengths
+        const sList = document.getElementById('report-strengths-list');
+        sList.innerHTML = '';
+        (evalData.strengths || []).forEach(s => {
+            const p = document.createElement('div');
+            p.style.fontSize = '0.85rem';
+            p.style.marginBottom = '8px';
+            p.textContent = `+ ${s}`;
+            sList.appendChild(p);
+        });
+
+        // Recommendations
+        const rList = document.getElementById('report-recs-list');
+        rList.innerHTML = '';
+        (evalData.recommendations || []).forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'rec-item';
+            div.textContent = r;
+            rList.appendChild(div);
+        });
+
+        // Summary Text
+        if (evalData.executive_summary && evalData.executive_summary.summary_text) {
+            document.getElementById('report-summary-text').textContent = evalData.executive_summary.summary_text;
+        }
+
+        // Strongest Spotlights
+        const strongList = document.getElementById('report-strongest-list');
+        if (strongList) {
+            strongList.innerHTML = '';
+            (evalData.strongest_responses || []).forEach(s => {
+                const item = document.createElement('div');
+                item.style.marginBottom = '12px';
+                item.style.fontSize = '0.8rem';
+                item.innerHTML = `
+                    <div style="font-weight:700; color:var(--accent-emerald);">Q${s.question_number} [${s.category.toUpperCase()}]: ${s.score}%</div>
+                    <div style="color:var(--text-primary); font-style:italic; margin:2px 0;">"${s.answer.slice(0, 100)}..."</div>
+                    <div style="color:var(--text-muted);">${s.why_strong}</div>
+                `;
+                strongList.appendChild(item);
+            });
+        }
+
+        // Weakest Spotlights
+        const weakList = document.getElementById('report-weakest-list');
+        if (weakList) {
+            weakList.innerHTML = '';
+            (evalData.improvement_areas || []).forEach(w => {
+                const item = document.createElement('div');
+                item.style.marginBottom = '12px';
+                item.style.fontSize = '0.8rem';
+                item.innerHTML = `
+                    <div style="font-weight:700; color:var(--accent-amber);">Q${w.question_number} [${w.category.toUpperCase()}]: ${w.score}%</div>
+                    <div style="color:var(--text-muted); margin:2px 0;">Critique: ${w.deficiency}</div>
+                    <div style="color:var(--accent-emerald);">Guidance: ${w.model_guidance}</div>
+                `;
+                weakList.appendChild(item);
+            });
+        }
+
+        // Journey Timeline Table
+        const tbody = document.getElementById('journey-table-body');
+        if (tbody) {
+            tbody.innerHTML = '';
+            (evalData.interview_journey || []).forEach(j => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid var(--border-subtle)';
+                tr.innerHTML = `
+                    <td style="padding:6px 8px; font-weight:700;">${j.turn}</td>
+                    <td style="padding:6px 8px;"><span style="background:var(--bg-card); padding:2px 6px; border-radius:4px; font-size:0.75rem;">${j.category.toUpperCase()}</span></td>
+                    <td style="padding:6px 8px; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${j.question}</td>
+                    <td style="padding:6px 8px; font-weight:700; color:var(--accent-cyan);">${j.score}%</td>
+                    <td style="padding:6px 8px;">L${j.difficulty}</td>
+                    <td style="padding:6px 8px; font-size:0.75rem;">${j.outcome}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 30-60-90 Day Plan
+        const plan = evalData.action_plan || {};
+        const p30 = document.getElementById('plan-30');
+        const p60 = document.getElementById('plan-60');
+        const p90 = document.getElementById('plan-90');
+        if (p30) p30.innerHTML = (plan.days_1_30 || []).map(t => `<div style="margin-bottom:6px;">• ${t}</div>`).join('');
+        if (p60) p60.innerHTML = (plan.days_31_60 || []).map(t => `<div style="margin-bottom:6px;">• ${t}</div>`).join('');
+        if (p90) p90.innerHTML = (plan.days_61_90 || []).map(t => `<div style="margin-bottom:6px;">• ${t}</div>`).join('');
+
+        // Report links
+        document.getElementById('btn-download-md').href = reportsData.markdown_url;
+        document.getElementById('btn-view-html').href = reportsData.html_url;
+    }
+
+    // Toggle Voice TTS
+    document.getElementById('btn-toggle-voice').addEventListener('click', () => {
+        state.voiceEnabled = !state.voiceEnabled;
+        document.getElementById('btn-toggle-voice').textContent = 
+            state.voiceEnabled ? '🔊 Voice: ON' : '🔈 Voice: OFF';
+    });
+
+    // Voice Dictation (Speech-to-Text)
+    const micBtn = document.getElementById('btn-mic');
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRec();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            state.isListening = true;
+            micBtn.classList.add('listening');
+            document.getElementById('mic-status-text').textContent = 'Listening...';
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const input = document.getElementById('candidate-answer-input');
+            input.value += (input.value ? ' ' : '') + transcript;
+        };
+
+        recognition.onend = () => {
+            state.isListening = false;
+            micBtn.classList.remove('listening');
+            document.getElementById('mic-status-text').textContent = 'Dictate Answer';
+        };
+
+        micBtn.addEventListener('click', () => {
+            if (state.isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        });
+    } else {
+        micBtn.style.display = 'none';
+    }
+</script>
+</body>
+</html>
