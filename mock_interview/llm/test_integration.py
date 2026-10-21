@@ -27,7 +27,7 @@ llm = create_interview_llm(
 
 
 print("=" * 70)
-print("LLM ↔ INTERVIEW INTEGRATION TEST")
+print("LLM <-> INTERVIEW INTEGRATION TEST")
 print("=" * 70)
 
 
@@ -276,5 +276,5 @@ print(
 
 print()
 print("=" * 70)
-print("LLM ↔ INTERVIEW INTEGRATION TEST COMPLETED")
+print("LLM <-> INTERVIEW INTEGRATION TEST COMPLETED")
 print("=" * 70)

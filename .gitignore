@@ -18,6 +18,7 @@ __pycache__/
 mock_interview/storage/recordings/
 mock_interview/storage/transcripts/
 mock_interview/storage/reports/
+reports/report_*
 
 # IDE
 .vscode/

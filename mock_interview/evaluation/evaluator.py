@@ -115,32 +115,48 @@ class InterviewEvaluator:
             active_category = turn.get("active_category", category)
             difficulty = turn.get("difficulty", 1)
 
-            # Retrieve existing assessment or analyze on the fly
+            # Determine if question was skipped or unattempted
+            is_skipped = (
+                turn.get("skipped", False)
+                or str(answer).strip() == "[Skipped]"
+                or str(answer).strip().lower() in (":skip", "skip", "/skip")
+                or not answer
+                or not str(answer).strip()
+            )
+
+            # Retrieve existing assessment or analyze on the fly (skip analysis if explicitly skipped)
             assessment = turn.get("assessment")
-            if not assessment or not isinstance(assessment, dict):
+            if not is_skipped and (not assessment or not isinstance(assessment, dict)):
                 assessment = analyze_answer(
                     question=question,
                     answer=answer,
                 )
+            elif is_skipped and (not assessment or not isinstance(assessment, dict)):
+                assessment = {
+                    "quality": "skipped",
+                    "score": 0.0,
+                    "technical_depth_level": "skipped",
+                    "clarity_level": "skipped",
+                    "relevance": {"level": "none", "score": 0.0},
+                    "completeness_level": "none",
+                    "vagueness_level": "none",
+                    "needs_followup": False,
+                }
 
-            score = float(assessment.get("score", 50.0))
-            quality = assessment.get("quality", "moderate")
-            tech_depth = assessment.get("technical_depth_level", "low")
-            clarity = assessment.get("clarity_level", "good")
-            relevance = assessment.get("relevance", {}).get("level", "medium")
-            completeness = assessment.get("completeness_level", "medium")
-            vagueness = assessment.get("vagueness_level", "low")
+            raw_score = assessment.get("score") if isinstance(assessment, dict) else None
+            score = float(raw_score) if raw_score is not None else (0.0 if is_skipped else 50.0)
+            quality = assessment.get("quality", "moderate") if not is_skipped else "skipped"
+            tech_depth = assessment.get("technical_depth_level", "low") if not is_skipped else "skipped"
+            clarity = assessment.get("clarity_level", "good") if not is_skipped else "skipped"
+            rel_dict = assessment.get("relevance", {}) if isinstance(assessment.get("relevance"), dict) else {}
+            relevance = rel_dict.get("level", "medium") if not is_skipped else "none"
+            completeness = assessment.get("completeness_level", "medium") if not is_skipped else "none"
+            vagueness = assessment.get("vagueness_level", "low") if not is_skipped else "none"
 
-            answer_topics = assessment.get("answer_topics", {})
-            turn_topics = answer_topics.get("topics", [])
+            answer_topics = assessment.get("answer_topics", {}) if isinstance(assessment.get("answer_topics"), dict) else {}
+            turn_topics = answer_topics.get("topics", []) if not is_skipped else []
             for t in turn_topics:
                 all_topics_mentioned.add(t)
-
-            is_skipped = (
-                turn.get("skipped", False)
-                or answer.strip() == "[Skipped]"
-                or answer.strip().lower() in (":skip", "skip")
-            )
 
             evaluated_turns.append(
                 {
@@ -151,22 +167,23 @@ class InterviewEvaluator:
                     "active_category": active_category,
                     "difficulty": difficulty,
                     "score": round(score, 2),
-                    "quality": "skipped" if is_skipped else quality,
-                    "technical_depth": "skipped" if is_skipped else tech_depth,
-                    "clarity": "skipped" if is_skipped else clarity,
+                    "quality": quality,
+                    "technical_depth": tech_depth,
+                    "clarity": clarity,
                     "relevance": relevance,
                     "completeness": completeness,
                     "vagueness": vagueness,
                     "topics": turn_topics,
-                    "needs_followup": assessment.get("needs_followup", False),
+                    "needs_followup": assessment.get("needs_followup", False) if not is_skipped else False,
                     "skipped": is_skipped,
                     "decision": turn.get("decision", {}),
                 }
             )
 
-            # Group scores under active interview category
-            target_cat = active_category if active_category != "follow_up" else category
-            category_scores.setdefault(target_cat, []).append(score)
+            # Group scores under active interview category (exclude skipped questions from category averages)
+            if not is_skipped:
+                target_cat = active_category if active_category != "follow_up" else category
+                category_scores.setdefault(target_cat, []).append(score)
 
         total_questions = len(evaluated_turns)
 
@@ -189,105 +206,129 @@ class InterviewEvaluator:
         # ---------------------------------------------------------
         # Core Competency Dimension Scoring (0 - 100)
         # ---------------------------------------------------------
+        valid_turns = [t for t in evaluated_turns if not t.get("skipped")]
+        has_valid_answers = len(valid_turns) > 0
 
-        # 1. Technical Knowledge
-        tech_scores = []
-        for turn in evaluated_turns:
-            if turn["active_category"] in ("technical", "project", "role_specific", "skill_gap") and not turn.get("skipped"):
-                tech_scores.append(turn["score"])
-        if not tech_scores:
-            tech_scores = [t["score"] for t in evaluated_turns if not t.get("skipped")] or [50.0]
-
-        tech_depth_bonus = 0.0
-        high_depth_count = sum(1 for t in evaluated_turns if t["technical_depth"] in ("high", "medium"))
-        if high_depth_count > 0:
-            tech_depth_bonus = min(10.0, (high_depth_count / max(1, total_questions)) * 15.0)
-
-        # Higher difficulty bonus (if candidate handled difficulty >= 3)
-        diff_bonus = min(5.0, (max_difficulty_reached - 1) * 1.5)
-        technical_knowledge = min(100.0, statistics.mean(tech_scores) + tech_depth_bonus + diff_bonus)
-
-        # 2. System Architecture & Project Execution
-        arch_scores = [
-            t["score"] for t in evaluated_turns
-            if t["active_category"] in ("project", "role_specific") and not t.get("skipped")
-        ]
-        system_architecture = statistics.mean(arch_scores) if arch_scores else technical_knowledge * 0.95
-
-        # 3. Problem Solving & Critical Thinking
-        ps_scores = []
-        for turn in evaluated_turns:
-            if turn["active_category"] in ("situational", "behavioral", "project") and not turn.get("skipped"):
-                ps_scores.append(turn["score"])
-        if not ps_scores:
-            ps_scores = [t["score"] for t in evaluated_turns if not t.get("skipped")] or [60.0]
-        problem_solving = statistics.mean(ps_scores)
-
-        # 4. Communication & Articulation
-        comm_scores = []
-        for turn in evaluated_turns:
-            if turn.get("skipped"):
-                continue
-            clarity_val = self._level_to_score(turn["clarity"])
-            vagueness_val = 100.0 - self._level_to_score(turn["vagueness"])
-            comm_scores.append((clarity_val * 0.6) + (vagueness_val * 0.4))
-        communication = statistics.mean(comm_scores) if comm_scores else 65.0
-
-        # 5. Relevance & Completeness
-        rel_scores = [self._level_to_score(t["relevance"]) for t in evaluated_turns if not t.get("skipped")] or [70.0]
-        relevance = statistics.mean(rel_scores)
-        comp_scores = [self._level_to_score(t["completeness"]) for t in evaluated_turns if not t.get("skipped")] or [60.0]
-        completeness = statistics.mean(comp_scores)
-
-        # 6. Behavioral & Situational Judgment
-        behav_scores = [
-            t["score"] for t in evaluated_turns
-            if t["active_category"] in ("behavioral", "situational") and not t.get("skipped")
-        ]
-        behavioral_judgment = statistics.mean(behav_scores) if behav_scores else 70.0
-
-        # Overall Score
-        overall_score = (
-            (technical_knowledge * 0.30)
-            + (system_architecture * 0.15)
-            + (problem_solving * 0.20)
-            + (completeness * 0.10)
-            + (relevance * 0.10)
-            + (communication * 0.15)
-        )
-        overall_score = round(max(0.0, min(100.0, overall_score)), 1)
-
-        # Performance Tier
-        if overall_score >= 80.0:
-            performance_tier = "Advanced / Recommended"
-        elif overall_score >= 65.0:
-            performance_tier = "Proficient / Solid Candidate"
-        elif overall_score >= 50.0:
-            performance_tier = "Developing / Promising"
+        if not has_valid_answers:
+            technical_knowledge = 0.0
+            system_architecture = 0.0
+            problem_solving = 0.0
+            communication = 0.0
+            relevance = 0.0
+            completeness = 0.0
+            behavioral_judgment = 0.0
+            overall_score = 0.0
+            performance_tier = "Insufficient Data (Ended Early)"
+            verdict_title = "Interview Ended Early - Insufficient Data"
         else:
-            performance_tier = "Needs Substantial Preparation"
+            # 1. Technical Knowledge
+            tech_scores = [
+                t["score"] for t in valid_turns
+                if t["active_category"] in ("technical", "project", "role_specific", "skill_gap")
+            ]
+            if not tech_scores:
+                tech_scores = [t["score"] for t in valid_turns]
+
+            tech_depth_bonus = 0.0
+            high_depth_count = sum(1 for t in valid_turns if t["technical_depth"] in ("high", "medium"))
+            if high_depth_count > 0:
+                tech_depth_bonus = min(10.0, (high_depth_count / max(1, len(valid_turns))) * 15.0)
+
+            # Higher difficulty bonus (if candidate handled difficulty >= 3)
+            diff_bonus = min(5.0, (max_difficulty_reached - 1) * 1.5)
+            technical_knowledge = min(100.0, statistics.mean(tech_scores) + tech_depth_bonus + diff_bonus)
+
+            # 2. System Architecture & Project Execution
+            arch_scores = [
+                t["score"] for t in valid_turns
+                if t["active_category"] in ("project", "role_specific")
+            ]
+            system_architecture = statistics.mean(arch_scores) if arch_scores else technical_knowledge * 0.95
+
+            # 3. Problem Solving & Critical Thinking
+            ps_scores = [
+                t["score"] for t in valid_turns
+                if t["active_category"] in ("situational", "behavioral", "project")
+            ]
+            if not ps_scores:
+                ps_scores = [t["score"] for t in valid_turns]
+            problem_solving = statistics.mean(ps_scores)
+
+            # 4. Communication & Articulation
+            comm_scores = []
+            for turn in valid_turns:
+                clarity_val = self._level_to_score(turn["clarity"])
+                vagueness_val = 100.0 - self._level_to_score(turn["vagueness"])
+                comm_scores.append((clarity_val * 0.6) + (vagueness_val * 0.4))
+            communication = statistics.mean(comm_scores) if comm_scores else 65.0
+
+            # 5. Relevance & Completeness
+            rel_scores = [self._level_to_score(t["relevance"]) for t in valid_turns]
+            relevance = statistics.mean(rel_scores) if rel_scores else 70.0
+            comp_scores = [self._level_to_score(t["completeness"]) for t in valid_turns]
+            completeness = statistics.mean(comp_scores) if comp_scores else 60.0
+
+            # 6. Behavioral & Situational Judgment
+            behav_scores = [
+                t["score"] for t in valid_turns
+                if t["active_category"] in ("behavioral", "situational")
+            ]
+            behavioral_judgment = statistics.mean(behav_scores) if behav_scores else 70.0
+
+            # Overall Score
+            overall_score = (
+                (technical_knowledge * 0.30)
+                + (system_architecture * 0.15)
+                + (problem_solving * 0.20)
+                + (completeness * 0.10)
+                + (relevance * 0.10)
+                + (communication * 0.15)
+            )
+            overall_score = round(max(0.0, min(100.0, overall_score)), 1)
+
+            # Performance Tier
+            if overall_score >= 80.0:
+                performance_tier = "Advanced / Recommended"
+            elif overall_score >= 65.0:
+                performance_tier = "Proficient / Solid Candidate"
+            elif overall_score >= 50.0:
+                performance_tier = "Developing / Promising"
+            else:
+                performance_tier = "Needs Substantial Preparation"
+
+            verdict_title = (
+                "Strong Candidate - Highly Recommended" if overall_score >= 80.0
+                else "Solid Candidate - Recommended with Focused Development" if overall_score >= 65.0
+                else "Developing Candidate - Foundational Gaps Present" if overall_score >= 50.0
+                else "Needs Substantial Preparation Before Re-interview"
+            )
 
         # ---------------------------------------------------------
         # Identify Strengths
         # ---------------------------------------------------------
+        matched_skills = self.match_report.get("required_skills", {}).get("matched", [])
+
         strengths: List[str] = []
         for cat, data in category_evaluations.items():
             if data["average_score"] >= 70.0:
                 strengths.append(f"Demonstrated solid competence in {cat.replace('_', ' ')} (Score: {data['average_score']}%)")
 
-        if communication >= 75.0:
-            strengths.append("Clear communication with minimal filler phrases and good structural clarity")
-        if technical_knowledge >= 75.0:
-            strengths.append("Strong technical explanations with meaningful depth and concept application")
-        if max_difficulty_reached >= 3:
-            strengths.append(f"Successfully reached and handled elevated difficulty level {max_difficulty_reached}")
+        if has_valid_answers:
+            if communication >= 75.0:
+                strengths.append("Clear communication with minimal filler phrases and good structural clarity")
+            if technical_knowledge >= 75.0:
+                strengths.append("Strong technical explanations with meaningful depth and concept application")
+            if max_difficulty_reached >= 3:
+                strengths.append(f"Successfully reached and handled elevated difficulty level {max_difficulty_reached}")
 
-        matched_skills = self.match_report.get("required_skills", {}).get("matched", [])
-        if matched_skills:
-            strengths.append(f"Verified job-matched skills: {', '.join(matched_skills)}")
+            if matched_skills:
+                strengths.append(f"Verified job-matched skills: {', '.join(matched_skills)}")
 
         if not strengths:
-            strengths.append("Demonstrated willingness to engage adaptively with all interview questions")
+            if has_valid_answers:
+                strengths.append("Demonstrated willingness to engage adaptively with interview questions")
+            else:
+                strengths.append("Candidate successfully initiated the interview session")
 
         # ---------------------------------------------------------
         # Identify Weaknesses & Improvement Areas
@@ -308,6 +349,9 @@ class InterviewEvaluator:
         skipped_count = sum(1 for t in evaluated_turns if t.get("skipped"))
         if skipped_count > 0:
             weaknesses.append(f"Skipped {skipped_count} question(s) without providing reasoning or partial solution structure")
+
+        if not has_valid_answers:
+            weaknesses.append("Interview ended before question responses were submitted")
 
         # ---------------------------------------------------------
         # Skill Gap Analysis
@@ -335,24 +379,27 @@ class InterviewEvaluator:
         # Concrete Recommendations
         # ---------------------------------------------------------
         recommendations: List[str] = []
-        if missing_required:
-            recommendations.append(
-                f"Build hands-on production experience with missing required skills: {', '.join(missing_required)}."
-            )
-        if missing_preferred:
-            recommendations.append(
-                f"Familiarize with role-preferred technologies such as: {', '.join(missing_preferred)}."
-            )
-        if low_depth_count >= 2:
-            recommendations.append(
-                "When discussing projects, include specific metrics (e.g. latency, accuracy, scale) and architectural tradeoffs."
-            )
-        if completeness < 70.0:
-            recommendations.append(
-                "Use the STAR method (Situation, Task, Action, Result) for behavioral and situational questions."
-            )
-        if not recommendations:
-            recommendations.append("Continue building end-to-end projects and maintaining deep architectural awareness.")
+        if not has_valid_answers:
+            recommendations.append("Complete the mock interview questions to receive full competency analysis and targeted guidance.")
+        else:
+            if missing_required:
+                recommendations.append(
+                    f"Build hands-on production experience with missing required skills: {', '.join(missing_required)}."
+                )
+            if missing_preferred:
+                recommendations.append(
+                    f"Familiarize with role-preferred technologies such as: {', '.join(missing_preferred)}."
+                )
+            if low_depth_count >= 2:
+                recommendations.append(
+                    "When discussing projects, include specific metrics (e.g. latency, accuracy, scale) and architectural tradeoffs."
+                )
+            if completeness < 70.0:
+                recommendations.append(
+                    "Use the STAR method (Situation, Task, Action, Result) for behavioral and situational questions."
+                )
+            if not recommendations:
+                recommendations.append("Continue building end-to-end projects and maintaining deep architectural awareness.")
 
         # =========================================================
         # 10 EVIDENCE-BASED INTELLIGENCE SECTIONS
@@ -374,12 +421,26 @@ class InterviewEvaluator:
             return f'"{ans[:160]}..."' if len(ans) > 160 else f'"{ans}"'
 
         # SECTION 1: EXECUTIVE SUMMARY
-        verdict_title = (
-            "Strong Candidate - Highly Recommended" if overall_score >= 80.0
-            else "Solid Candidate - Recommended with Focused Development" if overall_score >= 65.0
-            else "Developing Candidate - Foundational Gaps Present" if overall_score >= 50.0
-            else "Needs Substantial Preparation Before Re-interview"
-        )
+        if not has_valid_answers:
+            summary_text = (
+                f"{candidate_name} concluded the interview session before submitting responses to questions. "
+                f"No score could be computed due to insufficient interview response data."
+            )
+        else:
+            ans_count = len(valid_turns)
+            summary_text = (
+                f"{candidate_name} completed an early-concluded adaptive interview for the {role} role ({ans_count} response(s) evaluated across {total_questions} question(s) presented), "
+                f"achieving an interview score of {overall_score:.1f}/100 and reaching Difficulty Level {max_difficulty_reached}. "
+                f"The candidate demonstrated strength in {', '.join(strengths[:2]) if strengths else 'the evaluated responses'}, "
+                f"while showing opportunities for growth in {', '.join(weaknesses[:2]) if weaknesses else 'further interview practice'}. "
+                f"Overall assessment indicates {candidate_name} is {verdict_title.lower()}."
+            ) if total_questions < 5 else (
+                f"{candidate_name} completed a comprehensive {total_questions}-question adaptive technical interview for the {role} role, "
+                f"achieving an overall interview score of {overall_score:.1f}/100 and reaching Difficulty Level {max_difficulty_reached}. "
+                f"The candidate demonstrated strong capability in {', '.join(strengths[:2]) if strengths else 'core technical domains'}, "
+                f"while showing opportunities for growth in {', '.join(weaknesses[:2]) if weaknesses else 'production-level system validation'}. "
+                f"Overall assessment indicates {candidate_name} is {verdict_title.lower()}."
+            )
 
         executive_summary = {
             "candidate_name": candidate_name,
@@ -388,15 +449,11 @@ class InterviewEvaluator:
             "performance_tier": performance_tier,
             "verdict": verdict_title,
             "total_questions": total_questions,
+            "questions_answered": len(valid_turns),
+            "questions_skipped": sum(1 for t in evaluated_turns if t.get("skipped")),
             "max_difficulty_reached": max_difficulty_reached,
             "completed_domains": len(completed_categories),
-            "summary_text": (
-                f"{candidate_name} completed a comprehensive {total_questions}-question adaptive technical interview for the {role} role, "
-                f"achieving an overall interview score of {overall_score:.1f}/100 and reaching Difficulty Level {max_difficulty_reached}. "
-                f"The candidate demonstrated strong capability in {', '.join(strengths[:2]) if strengths else 'core technical domains'}, "
-                f"while showing opportunities for growth in {', '.join(weaknesses[:2]) if weaknesses else 'production-level system validation'}. "
-                f"Overall assessment indicates {candidate_name} is {verdict_title.lower()}."
-            ),
+            "summary_text": summary_text,
         }
 
         # SECTION 2: COMPETENCY ANALYSIS WITH EVIDENCE QUOTES

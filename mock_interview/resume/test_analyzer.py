@@ -2,17 +2,17 @@ from pathlib import Path
 
 try:
     from mock_interview.resume.parser import extract_text_from_pdf
-    from mock_interview.resume.analyzer import extract_sections
+    from mock_interview.resume.analyzer import detect_sections
 except ImportError:
     from parser import extract_text_from_pdf
-    from analyzer import extract_sections
+    from analyzer import detect_sections
 
 
 pdf_path = Path(__file__).resolve().parent / "test_data" / "resume.pdf"
 
 text = extract_text_from_pdf(pdf_path)
 
-sections = extract_sections(text)
+sections = detect_sections(text)
 
 
 print("=" * 70)
