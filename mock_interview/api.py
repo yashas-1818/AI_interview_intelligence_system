@@ -115,6 +115,7 @@ class StartInterviewRequest(BaseModel):
 class SubmitAnswerRequest(BaseModel):
     answer: str = Field(..., min_length=1)
     session_id: Optional[str] = None
+    speech_telemetry: Optional[Dict[str, Any]] = None
 
 
 class SkipQuestionRequest(BaseModel):
@@ -449,9 +450,13 @@ async def submit_answer(request: SubmitAnswerRequest):
     prev_question = orchestrator.get_current_question()
     prev_category = orchestrator.get_current_category()
 
-    result = orchestrator.process_answer(request.answer)
+    result = orchestrator.process_answer(
+        request.answer,
+        speech_telemetry=request.speech_telemetry,
+    )
     assessment = result.get("assessment", {})
     decision = result.get("decision", {})
+    speech_analytics = result.get("speech_analytics")
 
     is_active = orchestrator.state.is_active
 
@@ -475,6 +480,7 @@ async def submit_answer(request: SubmitAnswerRequest):
                 "complete_category": decision.get("complete_category", False),
                 "next_category": decision.get("next_category"),
             },
+            "speech_analytics": speech_analytics,
         },
         "current_difficulty": orchestrator.state.current_difficulty,
         "current_category": orchestrator.get_current_category(),
@@ -532,6 +538,7 @@ async def end_interview(request: EndInterviewRequest):
         orchestrator.state.end_session()
 
     final_state = orchestrator.get_state()
+    speech_delivery_analytics = orchestrator.get_session_speech_analytics()
 
     # Evaluation Engine
     evaluator = InterviewEvaluator(
@@ -540,6 +547,7 @@ async def end_interview(request: EndInterviewRequest):
         match_report=session.match_report,
     )
     evaluation_result = evaluator.evaluate(final_state)
+    evaluation_result["speech_delivery_analytics"] = speech_delivery_analytics
     session.evaluation_result = evaluation_result
 
     # Report Generator
@@ -549,6 +557,7 @@ async def end_interview(request: EndInterviewRequest):
         match_report=session.match_report,
         evaluation_result=evaluation_result,
         conversation_history=final_state.get("conversation_history", []),
+        speech_analytics=speech_delivery_analytics,
     )
 
     sid = final_state.get("session_id", session.session_id)
@@ -562,6 +571,7 @@ async def end_interview(request: EndInterviewRequest):
         "success": True,
         "session_id": sid,
         "evaluation": evaluation_result,
+        "speech_delivery_analytics": speech_delivery_analytics,
         "reports": {
             "markdown_url": f"/api/reports/{md_filename}",
             "html_url": f"/api/reports/{html_filename}",

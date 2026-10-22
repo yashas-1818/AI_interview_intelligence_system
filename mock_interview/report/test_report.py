@@ -120,13 +120,131 @@ def run_report_test():
     assert "Core Competency Dimensions" in md_report
     assert "Candidate-Job Alignment" in md_report
     assert "<!DOCTYPE html>" in html_report
+    assert "Speech & Verbal Delivery Analytics" in md_report
+    assert "Speech & Verbal Delivery" in html_report
 
     # Cleanup temporary test output directory
     if test_out_dir.exists():
         shutil.rmtree(test_out_dir)
 
+    # 8. Test Report with Explicit Speech Analytics
+    print("\n[TEST: REPORT WITH EXPLICIT SPEECH ANALYTICS]")
+    print("-" * 70)
+    explicit_speech = {
+        "total_turns": 3,
+        "valid_timing_turns": 3,
+        "total_words": 150,
+        "total_duration_sec": 65.0,
+        "average_speaking_pace_wpm": 138.5,
+        "total_fillers": 3,
+        "average_filler_rate_pct": 2.0,
+        "filler_breakdown": {"like": 2, "basically": 1},
+        "most_frequent_fillers": [{"filler": "like", "count": 2}, {"filler": "basically", "count": 1}],
+        "pause_summary": {
+            "total_pauses": 4,
+            "total_pause_duration_sec": 5.2,
+            "measured_turns": 3,
+            "status": "measured",
+            "details": "Measured across 3 turns with audio telemetry.",
+        },
+        "data_completeness": "full",
+        "delivery_observations": [
+            "Candidate spoke at an average pace of 138.5 WPM, which is within the standard conversational range.",
+            "Filler usage was minimal at 2.0% of spoken words.",
+            "A total of 4 pause events (5.2s total silence) were recorded across 3 timed turns.",
+        ],
+    }
+
+    gen_explicit = ReportGenerator(
+        candidate_profile=candidate_profile,
+        job_profile=job_profile,
+        match_report=match_report,
+        evaluation_result=evaluation_result,
+        speech_analytics=explicit_speech,
+    )
+    rep_explicit_data = gen_explicit.build_report()
+    md_explicit = gen_explicit.generate_markdown(rep_explicit_data)
+    html_explicit = gen_explicit.generate_html(rep_explicit_data)
+
+    assert "Speech & Verbal Delivery Analytics" in md_explicit
+    assert "138.5 WPM" in md_explicit
+    assert "150" in md_explicit
+    assert "65.0s" in md_explicit
+    assert "2.00%" in md_explicit
+    assert "4 pauses (5.2s silence)" in md_explicit
+    assert "Independence Guarantee" in html_explicit or "evaluated separately" in md_explicit
+    print("Report with explicit speech analytics validated successfully.")
+
+    # 9. Test Report with Missing Audio Timing (Transcript Only - Never Fabricate)
+    print("\n[TEST: REPORT WITH MISSING TIMING (NEVER FABRICATE PAUSES)]")
+    print("-" * 70)
+    transcript_only_speech = {
+        "total_turns": 2,
+        "valid_timing_turns": 0,
+        "total_words": 80,
+        "total_duration_sec": None,
+        "average_speaking_pace_wpm": None,
+        "total_fillers": 1,
+        "average_filler_rate_pct": 1.25,
+        "filler_breakdown": {"actually": 1},
+        "most_frequent_fillers": [{"filler": "actually", "count": 1}],
+        "pause_summary": {
+            "total_pauses": None,
+            "total_pause_duration_sec": None,
+            "measured_turns": 0,
+            "status": "unavailable",
+            "details": "Audio pause telemetry was not provided; pause metrics were not inferred from text.",
+        },
+        "data_completeness": "transcript_only",
+        "delivery_observations": [
+            "Speaking pace was unavailable because audio timing telemetry was not recorded.",
+            "Audio pause telemetry was not recorded; pauses were not inferred from transcript text.",
+        ],
+    }
+
+    gen_partial = ReportGenerator(
+        candidate_profile=candidate_profile,
+        job_profile=job_profile,
+        match_report=match_report,
+        evaluation_result=evaluation_result,
+        speech_analytics=transcript_only_speech,
+    )
+    rep_partial_data = gen_partial.build_report()
+    md_partial = gen_partial.generate_markdown(rep_partial_data)
+    html_partial = gen_partial.generate_html(rep_partial_data)
+
+    assert "Unavailable" in md_partial
+    assert "Audio pause telemetry was not provided; pauses are never inferred from text" in md_partial
+    assert "Not recorded" in html_partial or "Unavailable" in html_partial
+    print("Missing timing correctly reports Unavailable without inventing pauses or pacing.")
+
+    # 10. Test Zero-Answer Session Report Generation
+    print("\n[TEST: ZERO-ANSWER / EARLY TERMINATION SESSION]")
+    print("-" * 70)
+    empty_state = ConversationState(
+        candidate_name="H S YASHAS GOWDA",
+        role="AI/ML Engineer",
+        session_id="EMPTY_SESSION_TEST",
+    )
+    empty_state.end_session()
+    eval_empty = evaluator.evaluate(empty_state)
+    gen_empty = ReportGenerator(
+        candidate_profile=candidate_profile,
+        job_profile=job_profile,
+        match_report=match_report,
+        evaluation_result=eval_empty,
+        conversation_history=[],
+    )
+    rep_empty_data = gen_empty.build_report()
+    md_empty = gen_empty.generate_markdown(rep_empty_data)
+    html_empty = gen_empty.generate_html(rep_empty_data)
+
+    assert "<!DOCTYPE html>" in html_empty
+    assert len(md_empty) > 100
+    print("Zero-answer report generation passed gracefully.")
+
     print("\n" + "=" * 70)
-    print("REPORT GENERATOR TEST PASSED SUCCESSFULLY")
+    print("ALL REPORT GENERATOR TESTS PASSED SUCCESSFULLY")
     print("=" * 70)
 
 

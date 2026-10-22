@@ -27,12 +27,14 @@ class ReportGenerator:
         match_report: Optional[Dict[str, Any]] = None,
         evaluation_result: Optional[Dict[str, Any]] = None,
         conversation_history: Optional[List[Dict[str, Any]]] = None,
+        speech_analytics: Optional[Dict[str, Any]] = None,
     ):
         self.candidate_profile = candidate_profile
         self.job_profile = job_profile
         self.match_report = match_report or {}
         self.evaluation_result = evaluation_result or {}
         self.conversation_history = conversation_history or []
+        self.speech_analytics = speech_analytics
 
     # =============================================================
     # UTILITY HELPERS
@@ -104,6 +106,16 @@ class ReportGenerator:
         skill_gap_summary = eval_data.get("skill_gap_summary", {})
         questions = eval_data.get("question_breakdown", self.conversation_history)
 
+        # Speech Delivery Analytics (isolated from competency scores)
+        speech_data = self.speech_analytics or eval_data.get("speech_delivery_analytics")
+        if speech_data is None:
+            turns_source = self.conversation_history or eval_data.get("question_breakdown", [])
+            try:
+                from mock_interview.speech.analyzer import SpeechDeliveryAnalyzer
+                speech_data = SpeechDeliveryAnalyzer().aggregate_session(turns_source).to_dict()
+            except Exception:
+                speech_data = None
+
         return {
             "metadata": {
                 "generated_at": datetime.now().isoformat(),
@@ -150,6 +162,7 @@ class ReportGenerator:
             "improvement_areas": eval_data.get("improvement_areas", []),
             "action_plan": eval_data.get("action_plan", {}),
             "final_assessment": eval_data.get("final_assessment", {}),
+            "speech_delivery_analytics": speech_data,
         }
 
     # =============================================================
@@ -161,7 +174,8 @@ class ReportGenerator:
         report_data: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
-        Generate a comprehensive, evidence-based Markdown report covering all 10 intelligence sections.
+        Generate a comprehensive, evidence-based Markdown report covering all 10 intelligence sections
+        plus a dedicated Speech & Verbal Delivery Analytics section.
         """
         data = report_data or self.build_report()
 
@@ -175,6 +189,7 @@ class ReportGenerator:
         weakest = data.get("improvement_areas", [])
         plan = data.get("action_plan", {})
         final_assess = data.get("final_assessment", {})
+        speech_data = data.get("speech_delivery_analytics")
 
         md = []
         md.append("# AI INTERVIEW INTELLIGENCE & PERFORMANCE REPORT")
@@ -298,8 +313,71 @@ class ReportGenerator:
             md.append(f"1. {task}")
         md.append("")
 
-        # 10. Final Candidate Assessment
-        md.append("## 10. Final Candidate Assessment & Hiring Recommendation")
+        # 10. Speech & Verbal Delivery Analytics
+        if speech_data and isinstance(speech_data, dict):
+            md.append("## 10. Speech & Verbal Delivery Analytics")
+            completeness = speech_data.get("data_completeness", "transcript_only").replace("_", " ").title()
+            md.append(f"**Data Completeness Profile:** `{completeness}`  \n")
+            md.append("| Delivery Metric | Value | Unit | Status | Analytical Notes |")
+            md.append("| :--- | :---: | :---: | :---: | :--- |")
+
+            total_words = speech_data.get("total_words", 0)
+            w_status = "`Measured`" if total_words > 0 else "`Unavailable`"
+            md.append(f"| **Total Spoken Words** | {total_words} | words | {w_status} | Token-boundary matched |")
+
+            dur_val = speech_data.get("total_duration_sec")
+            dur_str = f"{dur_val:.1f}s" if dur_val is not None else "N/A"
+            dur_status = "`Measured`" if dur_val is not None else "`Unavailable`"
+            dur_note = "Cumulative answer recording time" if dur_val is not None else "Audio timing telemetry was not recorded"
+            md.append(f"| **Total Answer Duration** | {dur_str} | seconds | {dur_status} | {dur_note} |")
+
+            pace_val = speech_data.get("average_speaking_pace_wpm")
+            pace_str = f"{pace_val:.1f} WPM" if pace_val is not None else "N/A"
+            pace_status = "`Measured`" if pace_val is not None else "`Unavailable`"
+            pace_note = "Standard conversational benchmark: 120–165 WPM" if pace_val is not None else "Requires audio duration >= 1.0s to measure"
+            md.append(f"| **Average Speaking Pace** | {pace_str} | words/min | {pace_status} | {pace_note} |")
+
+            total_fillers = speech_data.get("total_fillers", 0)
+            md.append(f"| **Total Filler Words** | {total_fillers} | occurrences | `Measured` | Standard hesitation expressions detected |")
+
+            filler_rate = speech_data.get("average_filler_rate_pct", 0.0)
+            md.append(f"| **Filler Word Rate** | {filler_rate:.2f}% | percentage | `Measured` | Fillers as % of total spoken words |")
+
+            pause_summary = speech_data.get("pause_summary", {})
+            p_status_raw = pause_summary.get("status", "unavailable")
+            p_status = f"`{p_status_raw.capitalize()}`"
+            if p_status_raw == "measured" and pause_summary.get("total_pauses") is not None:
+                p_cnt = pause_summary.get("total_pauses", 0)
+                p_sec = pause_summary.get("total_pause_duration_sec", 0.0)
+                pause_val = f"{p_cnt} pauses ({p_sec:.1f}s silence)"
+                pause_note = f"Measured across {pause_summary.get('measured_turns', 0)} timed turns"
+            else:
+                pause_val = "N/A"
+                pause_note = "Audio pause telemetry was not provided; pauses are never inferred from text"
+            md.append(f"| **Audio Pauses & Silence** | {pause_val} | events | {p_status} | {pause_note} |")
+            md.append("")
+
+            # Top Fillers
+            top_fillers = speech_data.get("most_frequent_fillers", [])
+            if top_fillers:
+                md.append("### Most Frequent Filler Words")
+                for f_item in top_fillers:
+                    md.append(f"- `'{f_item.get('filler')}'`: {f_item.get('count')} occurrence(s)")
+                md.append("")
+
+            # Observations
+            observations = speech_data.get("delivery_observations", [])
+            if observations:
+                md.append("### Objective Delivery Observations")
+                for obs in observations:
+                    md.append(f"- {obs}")
+                md.append("")
+
+            md.append("> *Note: Speech and verbal delivery analytics provide objective communication pacing insights and are evaluated separately from technical knowledge, competency scores, and hiring decisions.*")
+            md.append("")
+
+        # 11. Final Candidate Assessment
+        md.append("## 11. Final Candidate Assessment & Hiring Recommendation")
         md.append(f"- **Final Hiring Verdict:** **{final_assess.get('hiring_verdict', 'Pending Review')}**")
         md.append(f"- **Role Alignment:** {final_assess.get('ideal_role_fit', data['job']['role'])}")
         md.append(f"- **Growth Trajectory:** {final_assess.get('growth_trajectory', 'Normal')}")
@@ -338,6 +416,7 @@ class ReportGenerator:
         weakest = data.get("improvement_areas", [])
         plan = data.get("action_plan", {})
         final_assess = data.get("final_assessment", {})
+        speech_data = data.get("speech_delivery_analytics")
 
         score = data["interview_summary"]["overall_score"]
         tier = data["interview_summary"]["performance_tier"]
@@ -414,6 +493,100 @@ class ReportGenerator:
                 </div>
                 <p style="font-size:12px; color:#b45309; margin:4px 0;"><strong>Identified Deficiency:</strong> {w.get('deficiency')}</p>
                 <p style="font-size:12px; color:#15803d; margin:4px 0 0 0;"><strong>Exemplary Guidance:</strong> {w.get('model_guidance')}</p>
+            </div>
+            """
+
+        # Speech Analytics Card in HTML
+        speech_html = ""
+        if speech_data and isinstance(speech_data, dict):
+            pace_val = speech_data.get("average_speaking_pace_wpm")
+            pace_display = f"{pace_val:.1f} WPM" if pace_val is not None else "Unavailable"
+            pace_status = "Measured" if pace_val is not None else "Unavailable"
+            pace_color = "#0284c7" if pace_val is not None else "#94a3b8"
+
+            tot_words = speech_data.get("total_words", 0)
+            tot_dur = speech_data.get("total_duration_sec")
+            dur_display = f"{tot_dur:.1f}s" if tot_dur is not None else "Unavailable"
+
+            filler_rate = speech_data.get("average_filler_rate_pct", 0.0)
+            tot_fillers = speech_data.get("total_fillers", 0)
+
+            pause_sum = speech_data.get("pause_summary", {})
+            if pause_sum.get("status") == "measured" and pause_sum.get("total_pauses") is not None:
+                pause_display = f"{pause_sum.get('total_pauses', 0)} pauses ({pause_sum.get('total_pause_duration_sec', 0.0):.1f}s)"
+                pause_status = "Measured"
+                pause_color = "#059669"
+            else:
+                pause_display = "Unavailable"
+                pause_status = "Not recorded"
+                pause_color = "#94a3b8"
+
+            # Top filler chips
+            top_fillers = speech_data.get("most_frequent_fillers", [])
+            filler_chips = ""
+            if top_fillers:
+                for f_item in top_fillers:
+                    filler_chips += f"""<span style="background:#f1f5f9; color:#334155; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; border:1px solid #cbd5e1;">'{f_item.get('filler')}': {f_item.get('count')}</span> """
+            else:
+                filler_chips = "<span style=\"color:#64748b; font-size:12px;\">None detected</span>"
+
+            # Observations list
+            obs_html = ""
+            for obs in speech_data.get("delivery_observations", []):
+                obs_html += f"<li style='margin-bottom:6px; color:#334155; font-size:13px;'>{obs}</li>"
+
+            speech_html = f"""
+            <!-- Speech & Verbal Delivery -->
+            <div class="section-title">
+                <span>10. Speech & Verbal Delivery Analytics</span>
+                <span style="font-size:12px; font-weight:600; color:#64748b; text-transform:none;">Objective Communication Insights</span>
+            </div>
+            <div class="card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:22px; margin-bottom:24px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:18px;">
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-weight:700; letter-spacing:0.5px;">Speaking Pace</div>
+                        <div style="font-size:22px; font-weight:800; color:{pace_color}; margin:4px 0;">{pace_display}</div>
+                        <span style="font-size:10px; font-weight:700; color:#64748b; background:#e2e8f0; padding:2px 8px; border-radius:999px;">{pace_status}</span>
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-weight:700; letter-spacing:0.5px;">Spoken Words</div>
+                        <div style="font-size:22px; font-weight:800; color:#1e293b; margin:4px 0;">{tot_words} words</div>
+                        <span style="font-size:10px; font-weight:700; color:#059669; background:#d1fae5; padding:2px 8px; border-radius:999px;">Measured</span>
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-weight:700; letter-spacing:0.5px;">Answer Duration</div>
+                        <div style="font-size:22px; font-weight:800; color:#1e293b; margin:4px 0;">{dur_display}</div>
+                        <span style="font-size:10px; font-weight:700; color:#64748b; background:#e2e8f0; padding:2px 8px; border-radius:999px;">Audio Timing</span>
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-weight:700; letter-spacing:0.5px;">Filler Word Rate</div>
+                        <div style="font-size:22px; font-weight:800; color:#d97706; margin:4px 0;">{filler_rate:.1f}%</div>
+                        <span style="font-size:10px; font-weight:700; color:#64748b; background:#e2e8f0; padding:2px 8px; border-radius:999px;">{tot_fillers} total</span>
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-weight:700; letter-spacing:0.5px;">Audio Silence / Pauses</div>
+                        <div style="font-size:20px; font-weight:800; color:{pause_color}; margin:4px 0;">{pause_display}</div>
+                        <span style="font-size:10px; font-weight:700; color:#64748b; background:#e2e8f0; padding:2px 8px; border-radius:999px;">{pause_status}</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; margin-bottom:6px;">Most Frequent Hesitation Expressions</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        {filler_chips}
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; margin-bottom:6px;">Objective Delivery Observations</div>
+                    <ul style="margin:0; padding-left:18px;">
+                        {obs_html}
+                    </ul>
+                </div>
+
+                <div style="margin-top:16px; padding:10px 14px; background:#eff6ff; border-left:3px solid #3b82f6; border-radius:4px; font-size:12px; color:#1e40af;">
+                    <strong>Independence Guarantee:</strong> Speech delivery metrics are analyzed for objective communication self-awareness and do not impact technical knowledge scores, competency assessments, or hiring decisions.
+                </div>
             </div>
             """
 
@@ -577,9 +750,11 @@ class ReportGenerator:
         </div>
     </div>
 
-    <!-- 10. Final Hiring Assessment -->
+    {speech_html}
+
+    <!-- 11. Final Hiring Assessment -->
     <div class="section-title">
-        <span>10. Final Candidate Assessment & Hiring Recommendation</span>
+        <span>11. Final Candidate Assessment & Hiring Recommendation</span>
     </div>
     <div class="card" style="background: #f8fafc; border: 2px solid #e2e8f0;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">

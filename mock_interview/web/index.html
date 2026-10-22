@@ -1503,6 +1503,63 @@
                 </div>
             </div>
 
+            <!-- Speech & Verbal Delivery Analytics -->
+            <div style="margin-bottom: 28px;" id="report-speech-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 1.1rem; margin: 0;">Speech & Verbal Delivery Analytics</h3>
+                    <span style="font-size: 0.75rem; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); padding: 3px 10px; border-radius: 999px; font-weight: 600;" id="report-speech-status">
+                        Objective Pacing Insights
+                    </span>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                        <div style="background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Speaking Pace</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-sky); margin: 4px 0;" id="report-speech-pace">-- WPM</div>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);" id="report-speech-pace-status">Unavailable</span>
+                        </div>
+                        <div style="background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Spoken Words</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin: 4px 0;" id="report-speech-words">0</div>
+                            <span style="font-size: 0.7rem; color: var(--accent-emerald);">Measured</span>
+                        </div>
+                        <div style="background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Answer Duration</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin: 4px 0;" id="report-speech-duration">--s</div>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);" id="report-speech-duration-status">Audio Timing</span>
+                        </div>
+                        <div style="background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Filler Word Rate</div>
+                            <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-amber); margin: 4px 0;" id="report-speech-filler-rate">0.0%</div>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);" id="report-speech-filler-count">0 total</span>
+                        </div>
+                        <div style="background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Audio Pauses</div>
+                            <div style="font-size: 1.3rem; font-weight: 800; color: var(--accent-emerald); margin: 4px 0;" id="report-speech-pauses">--</div>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);" id="report-speech-pauses-status">Not measured</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px;">Hesitation Expressions Detected</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;" id="report-speech-fillers-list">
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">None detected</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px;">Objective Delivery Observations</div>
+                        <div id="report-speech-observations" style="font-size: 0.85rem; color: var(--text-secondary);">
+                            <div>No speech data recorded for this session.</div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 10px 14px; background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--accent-sky); border-radius: var(--radius-md); font-size: 0.78rem; color: var(--text-secondary);">
+                        <strong style="color: var(--accent-sky);">Independence Guarantee:</strong> Speech delivery metrics provide behavioral and pacing self-awareness. They are evaluated independently from technical knowledge, competency scores, and hiring verdicts.
+                    </div>
+                </div>
+            </div>
+
             <!-- Export Buttons -->
             <div style="display: flex; gap: 16px; justify-content: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 20px;">
                 <a href="#" class="btn btn-secondary" id="btn-download-md" target="_blank">📄 Download Markdown Report</a>
@@ -1533,7 +1590,33 @@
         cameraActive: false,
         micActive: false,
         mediaPermissionDenied: false,
+        // Speech Timing Telemetry (Phase 2)
+        turnTiming: {
+            turnStartTime: null,
+            firstSpeechTime: null,
+            lastSpeechEndTime: null,
+            activeSpeechDurationMs: 0,
+            totalSilenceDurationMs: 0,
+            pauseEvents: [],
+            speechSegments: [],
+            currentSpeechSegmentStart: null,
+            hasSpeechActivity: false,
+        },
     };
+
+    function resetTurnTiming(startTime = null) {
+        state.turnTiming = {
+            turnStartTime: startTime !== null ? startTime : Date.now(),
+            firstSpeechTime: null,
+            lastSpeechEndTime: null,
+            activeSpeechDurationMs: 0,
+            totalSilenceDurationMs: 0,
+            pauseEvents: [],
+            speechSegments: [],
+            currentSpeechSegmentStart: null,
+            hasSpeechActivity: false,
+        };
+    }
 
     // Stage navigation
     function switchStage(stageNum) {
@@ -1716,6 +1799,8 @@
             utterance.onend = () => {
                 const speakingEl2 = document.getElementById('ai-speaking-indicator');
                 if (speakingEl2) speakingEl2.classList.remove('visible');
+                // Reset turn timing when AI finishes speaking the question
+                resetTurnTiming(Date.now());
                 // Auto-start STT after TTS completes
                 sttStart();
             };
@@ -1723,14 +1808,16 @@
             utterance.onerror = () => {
                 const speakingEl2 = document.getElementById('ai-speaking-indicator');
                 if (speakingEl2) speakingEl2.classList.remove('visible');
+                resetTurnTiming(Date.now());
                 sttStart();
             };
 
             window.speechSynthesis.speak(utterance);
         } else {
-            // No TTS, go straight to listening
+            // No TTS, go straight to listening and start timing
             const speakingEl = document.getElementById('ai-speaking-indicator');
             if (speakingEl) speakingEl.classList.remove('visible');
+            resetTurnTiming(Date.now());
             sttStart();
         }
     }
@@ -1749,6 +1836,7 @@
         btn.innerHTML = '<span class="spinner"></span> Skipping...';
         btn.disabled = true;
         sttStop(); // Stop listening while processing
+        resetTurnTiming(null); // Reset turn timing immediately on skip
 
         try {
             const res = await fetch('/api/skip-question', {
@@ -1791,15 +1879,72 @@
 
         sttStop(); // Stop listening while submitting
 
+        // Close any active speech segment at submission time
+        const now = Date.now();
+        if (state.turnTiming && state.turnTiming.currentSpeechSegmentStart) {
+            const segDur = now - state.turnTiming.currentSpeechSegmentStart;
+            if (segDur > 0) {
+                state.turnTiming.speechSegments.push({
+                    start_ms: state.turnTiming.currentSpeechSegmentStart,
+                    end_ms: now,
+                    duration_ms: segDur,
+                });
+                state.turnTiming.activeSpeechDurationMs += segDur;
+            }
+            state.turnTiming.currentSpeechSegmentStart = null;
+        }
+
+        // Build telemetry payload safely
+        let telemetry = null;
+        if (state.turnTiming && state.turnTiming.turnStartTime) {
+            const elapsedMs = Math.max(0, now - state.turnTiming.turnStartTime);
+            if (state.turnTiming.hasSpeechActivity) {
+                // Audio speech events were observed
+                telemetry = {
+                    start_time_ms: state.turnTiming.turnStartTime,
+                    end_time_ms: now,
+                    duration_ms: elapsedMs,
+                    speech_duration_ms: state.turnTiming.activeSpeechDurationMs > 0 ? state.turnTiming.activeSpeechDurationMs : null,
+                    silence_duration_ms: state.turnTiming.totalSilenceDurationMs > 0 ? state.turnTiming.totalSilenceDurationMs : (state.turnTiming.pauseEvents.length > 0 ? 0 : null),
+                    pause_count: state.turnTiming.pauseEvents.length,
+                    pause_events: state.turnTiming.pauseEvents,
+                    speech_segments: state.turnTiming.speechSegments,
+                };
+            } else {
+                // Text/keyboard submission: record elapsed duration, never fabricate pause counts or speech durations
+                telemetry = {
+                    start_time_ms: state.turnTiming.turnStartTime,
+                    end_time_ms: now,
+                    duration_ms: elapsedMs,
+                    speech_duration_ms: null,
+                    silence_duration_ms: null,
+                    pause_count: null,
+                    pause_events: [],
+                    speech_segments: [],
+                };
+            }
+        }
+
+        // Reset turn timing for next turn
+        resetTurnTiming(null);
+
         const btn = document.getElementById('btn-submit-answer');
         btn.innerHTML = '<span class="spinner"></span> Evaluating...';
         btn.disabled = true;
 
         try {
+            const payload = {
+                session_id: state.sessionId,
+                answer: answer,
+            };
+            if (telemetry) {
+                payload.speech_telemetry = telemetry;
+            }
+
             const res = await fetch('/api/submit-answer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: state.sessionId, answer: answer })
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (!data.success) throw new Error(data.detail || 'Failed to process answer');
@@ -1838,6 +1983,7 @@
 
     async function concludeInterview() {
         sttStop(); // Stop listening before concluding
+        resetTurnTiming(null); // Stop/reset speech timing on termination
         window.speechSynthesis && window.speechSynthesis.cancel();
 
         const toast = document.getElementById('feedback-toast');
@@ -1856,14 +2002,14 @@
             const data = await res.json();
             if (!data.success) throw new Error(data.detail || 'Evaluation failed');
 
-            renderReport(data.evaluation, data.reports);
+            renderReport(data.evaluation, data.reports, data.speech_delivery_analytics);
             switchStage(4);
         } catch (err) {
             alert('Report error: ' + err.message);
         }
     }
 
-    function renderReport(evalData, reportsData) {
+    function renderReport(evalData, reportsData, speechData = null) {
         document.getElementById('report-overall-score').textContent = Math.round(evalData.overall_score || 0);
         document.getElementById('report-tier-display').textContent = evalData.performance_tier || 'Completed';
         document.getElementById('report-candidate-header').textContent = `${evalData.candidate_name || 'Candidate'} • ${evalData.role || 'Role'}`;
@@ -1975,6 +2121,105 @@
         if (p60) p60.innerHTML = (plan.days_31_60 || []).map(t => `<div style="margin-bottom:6px;">• ${t}</div>`).join('');
         if (p90) p90.innerHTML = (plan.days_61_90 || []).map(t => `<div style="margin-bottom:6px;">• ${t}</div>`).join('');
 
+        // Speech & Verbal Delivery Analytics Rendering
+        const sAnalytics = speechData || evalData.speech_delivery_analytics || null;
+        if (sAnalytics && typeof sAnalytics === 'object') {
+            const pace = sAnalytics.average_speaking_pace_wpm;
+            const paceEl = document.getElementById('report-speech-pace');
+            const paceStatusEl = document.getElementById('report-speech-pace-status');
+            if (paceEl) {
+                paceEl.textContent = (pace !== null && pace !== undefined) ? `${pace.toFixed(1)} WPM` : '-- WPM';
+            }
+            if (paceStatusEl) {
+                paceStatusEl.textContent = (pace !== null && pace !== undefined) ? 'Measured' : 'Unavailable';
+                paceStatusEl.style.color = (pace !== null && pace !== undefined) ? 'var(--accent-emerald)' : 'var(--text-muted)';
+            }
+
+            const wordsEl = document.getElementById('report-speech-words');
+            if (wordsEl) {
+                wordsEl.textContent = sAnalytics.total_words !== undefined ? `${sAnalytics.total_words} words` : '0 words';
+            }
+
+            const dur = sAnalytics.total_duration_sec;
+            const durEl = document.getElementById('report-speech-duration');
+            const durStatusEl = document.getElementById('report-speech-duration-status');
+            if (durEl) {
+                durEl.textContent = (dur !== null && dur !== undefined) ? `${dur.toFixed(1)}s` : '--s';
+            }
+            if (durStatusEl) {
+                durStatusEl.textContent = (dur !== null && dur !== undefined) ? 'Measured' : 'Not recorded';
+            }
+
+            const fRate = sAnalytics.average_filler_rate_pct;
+            const fTotal = sAnalytics.total_fillers;
+            const fRateEl = document.getElementById('report-speech-filler-rate');
+            const fCountEl = document.getElementById('report-speech-filler-count');
+            if (fRateEl) {
+                fRateEl.textContent = fRate !== undefined ? `${fRate.toFixed(1)}%` : '0.0%';
+            }
+            if (fCountEl) {
+                fCountEl.textContent = fTotal !== undefined ? `${fTotal} total` : '0 total';
+            }
+
+            const pauses = sAnalytics.pause_summary;
+            const pausesEl = document.getElementById('report-speech-pauses');
+            const pausesStatusEl = document.getElementById('report-speech-pauses-status');
+            if (pauses && pauses.status === 'measured' && pauses.total_pauses !== null && pauses.total_pauses !== undefined) {
+                if (pausesEl) {
+                    pausesEl.textContent = `${pauses.total_pauses} (${(pauses.total_pause_duration_sec || 0).toFixed(1)}s)`;
+                }
+                if (pausesStatusEl) {
+                    pausesStatusEl.textContent = 'Measured';
+                    pausesStatusEl.style.color = 'var(--accent-emerald)';
+                }
+            } else {
+                if (pausesEl) {
+                    pausesEl.textContent = 'Unavailable';
+                }
+                if (pausesStatusEl) {
+                    pausesStatusEl.textContent = 'Pauses never estimated from text';
+                    pausesStatusEl.style.color = 'var(--text-muted)';
+                }
+            }
+
+            // Hesitation words chips
+            const fillersList = document.getElementById('report-speech-fillers-list');
+            if (fillersList) {
+                fillersList.innerHTML = '';
+                const topF = sAnalytics.most_frequent_fillers || [];
+                if (topF.length > 0) {
+                    topF.forEach(item => {
+                        const chip = document.createElement('span');
+                        chip.className = 'chip';
+                        chip.style.background = 'var(--bg-base)';
+                        chip.style.border = '1px solid var(--border-subtle)';
+                        chip.style.fontSize = '0.8rem';
+                        chip.textContent = `'${item.filler}': ${item.count}`;
+                        fillersList.appendChild(chip);
+                    });
+                } else {
+                    fillersList.innerHTML = '<span style="color:var(--text-muted); font-size:0.8rem;">None detected</span>';
+                }
+            }
+
+            // Observations
+            const obsEl = document.getElementById('report-speech-observations');
+            if (obsEl) {
+                obsEl.innerHTML = '';
+                const obs = sAnalytics.delivery_observations || [];
+                if (obs.length > 0) {
+                    obs.forEach(o => {
+                        const div = document.createElement('div');
+                        div.style.marginBottom = '6px';
+                        div.textContent = `• ${o}`;
+                        obsEl.appendChild(div);
+                    });
+                } else {
+                    obsEl.innerHTML = '<div>Standard delivery recorded.</div>';
+                }
+            }
+        }
+
         // Report links
         document.getElementById('btn-download-md').href = reportsData.markdown_url;
         document.getElementById('btn-view-html').href = reportsData.html_url;
@@ -2023,9 +2268,44 @@
                 setSttStatus('active', '\uD83C\uDF99\uFE0F Listening... speak your answer');
             };
 
+            rec.onspeechstart = () => {
+                const now = Date.now();
+                if (state.turnTiming) {
+                    if (!state.turnTiming.firstSpeechTime) {
+                        state.turnTiming.firstSpeechTime = now;
+                    }
+                    state.turnTiming.currentSpeechSegmentStart = now;
+                    state.turnTiming.hasSpeechActivity = true;
+
+                    if (state.turnTiming.lastSpeechEndTime && now > state.turnTiming.lastSpeechEndTime) {
+                        const pauseDur = now - state.turnTiming.lastSpeechEndTime;
+                        if (pauseDur >= 500) {
+                            state.turnTiming.pauseEvents.push({
+                                start_ms: state.turnTiming.lastSpeechEndTime,
+                                end_ms: now,
+                                duration_ms: pauseDur,
+                            });
+                            state.turnTiming.totalSilenceDurationMs += pauseDur;
+                        }
+                    }
+                }
+            };
+
             rec.onresult = (event) => {
                 const input = document.getElementById('candidate-answer-input');
                 if (!input) return;
+
+                // Speech activity detected
+                const now = Date.now();
+                if (state.turnTiming) {
+                    if (!state.turnTiming.firstSpeechTime) {
+                        state.turnTiming.firstSpeechTime = now;
+                    }
+                    state.turnTiming.hasSpeechActivity = true;
+                    if (!state.turnTiming.currentSpeechSegmentStart) {
+                        state.turnTiming.currentSpeechSegmentStart = now;
+                    }
+                }
 
                 // Separate final and interim results from this batch
                 let finalChunk = '';
@@ -2050,6 +2330,22 @@
             };
 
             rec.onspeechend = () => {
+                const now = Date.now();
+                if (state.turnTiming) {
+                    state.turnTiming.lastSpeechEndTime = now;
+                    if (state.turnTiming.currentSpeechSegmentStart) {
+                        const segDur = now - state.turnTiming.currentSpeechSegmentStart;
+                        if (segDur > 0) {
+                            state.turnTiming.speechSegments.push({
+                                start_ms: state.turnTiming.currentSpeechSegmentStart,
+                                end_ms: now,
+                                duration_ms: segDur,
+                            });
+                            state.turnTiming.activeSpeechDurationMs += segDur;
+                        }
+                        state.turnTiming.currentSpeechSegmentStart = null;
+                    }
+                }
                 // Browser detected end of speech. Stay in listening mode.
                 setSttStatus('active', 'Pause detected \u2014 still listening...');
             };

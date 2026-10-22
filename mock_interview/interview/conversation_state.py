@@ -98,25 +98,39 @@ class ConversationState:
     # ANSWER MANAGEMENT
     # ------------------------------------------------------------------
 
-    def record_answer(self, answer: str):
+    def record_answer(
+        self,
+        answer: str,
+        speech_telemetry: Optional[Dict] = None,
+        speech_analytics: Optional[Dict] = None,
+    ):
         """
         Record the candidate's answer against the current question.
+        Optionally stores raw speech telemetry and computed speech analytics.
         """
 
         self.answers_received.append(answer)
 
-        self.conversation_history.append(
-            {
-                "question_number": self.question_number,
-                "category": self.current_category,
-                "active_category": self.active_category,
-                "difficulty": self.current_difficulty,
-                "question": self.current_question,
-                "answer": answer,
-            }
-        )
+        entry = {
+            "question_number": self.question_number,
+            "category": self.current_category,
+            "active_category": self.active_category,
+            "difficulty": self.current_difficulty,
+            "question": self.current_question,
+            "answer": answer,
+        }
+        if speech_telemetry is not None:
+            entry["speech_telemetry"] = speech_telemetry
+        if speech_analytics is not None:
+            entry["speech_analytics"] = speech_analytics
 
-    def record_skip(self, question: Optional[str] = None):
+        self.conversation_history.append(entry)
+
+    def record_skip(
+        self,
+        question: Optional[str] = None,
+        speech_analytics: Optional[Dict] = None,
+    ):
         """
         Record that the current question was skipped by the candidate.
         Ensures the question is marked as consumed, added to history with
@@ -129,33 +143,40 @@ class ConversationState:
             self.questions_asked.append(q)
 
         self.answers_received.append("[Skipped]")
-        self.conversation_history.append(
-            {
-                "question_number": self.question_number,
-                "category": self.current_category,
-                "active_category": self.active_category,
-                "difficulty": self.current_difficulty,
-                "question": q,
-                "answer": "[Skipped]",
-                "skipped": True,
-                "assessment": {
-                    "quality": "skipped",
-                    "score": None,
-                    "technical_depth_level": "skipped",
-                    "clarity_level": "skipped",
-                    "relevance": {"level": "none", "score": 0.0},
-                    "completeness_level": "none",
-                    "vagueness_level": "none",
-                    "needs_followup": False,
-                },
-                "decision": {
-                    "action": "skip",
-                    "complete_category": True,
-                    "trigger_followup": False,
-                    "difficulty_change": 0,
-                },
-            }
-        )
+        skip_entry = {
+            "question_number": self.question_number,
+            "category": self.current_category,
+            "active_category": self.active_category,
+            "difficulty": self.current_difficulty,
+            "question": q,
+            "answer": "[Skipped]",
+            "skipped": True,
+            "assessment": {
+                "quality": "skipped",
+                "score": None,
+                "technical_depth_level": "skipped",
+                "clarity_level": "skipped",
+                "relevance": {"level": "none", "score": 0.0},
+                "completeness_level": "none",
+                "vagueness_level": "none",
+                "needs_followup": False,
+            },
+            "decision": {
+                "action": "skip",
+                "complete_category": True,
+                "trigger_followup": False,
+                "difficulty_change": 0,
+            },
+        }
+        if speech_analytics is not None:
+            skip_entry["speech_analytics"] = speech_analytics
+
+        self.conversation_history.append(skip_entry)
+
+    def set_speech_analytics_for_last_turn(self, speech_analytics: Dict):
+        """Attach or update speech analytics on the most recent turn."""
+        if self.conversation_history:
+            self.conversation_history[-1]["speech_analytics"] = speech_analytics
 
     def has_question_been_asked(self, question: str) -> bool:
         """Check if a question has already been asked or skipped."""

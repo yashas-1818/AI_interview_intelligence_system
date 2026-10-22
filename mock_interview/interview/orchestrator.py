@@ -11,6 +11,7 @@ from .answer_analyzer import analyze_answer
 from .decision_engine import process_answer as process_answer_decision
 from .question_validator import QuestionValidator
 from .category_scheduler import AdaptiveCategoryScheduler
+from mock_interview.speech import SpeechDeliveryAnalyzer
 
 
 class InterviewOrchestrator:
@@ -166,6 +167,12 @@ class InterviewOrchestrator:
 
         self.validator = QuestionValidator()
         self._register_validator_entities(candidate_dict, job_dict)
+
+        # =========================================================
+        # SPEECH DELIVERY ANALYZER
+        # =========================================================
+
+        self.speech_analyzer = SpeechDeliveryAnalyzer(conservative_like=True)
 
         # =========================================================
         # LLM INITIALIZATION
@@ -724,7 +731,15 @@ class InterviewOrchestrator:
         if self.state.current_difficulty > 1:
             self.state.decrease_difficulty()
 
-        self.state.record_skip()
+        turn_id = f"q_{self.state.question_number}"
+        skip_speech = self.speech_analyzer.analyze_turn(
+            transcript="",
+            telemetry=None,
+            turn_id=turn_id,
+        )
+        skip_speech_dict = skip_speech.to_dict()
+
+        self.state.record_skip(speech_analytics=skip_speech_dict)
         if hasattr(self, "scheduler"):
             self.scheduler.record_question(skipped_cat, is_skipped=True)
 
@@ -756,6 +771,7 @@ class InterviewOrchestrator:
                     "trigger_followup": False,
                     "next_category": "closing",
                 },
+                "speech_analytics": skip_speech_dict,
                 "completed_categories": list(self.state.completed_categories),
                 "questions_completed": len(self.state.answers_received),
             }
@@ -809,6 +825,7 @@ class InterviewOrchestrator:
                 "trigger_followup": False,
                 "next_category": next_cat_res,
             },
+            "speech_analytics": skip_speech_dict,
             "completed_categories": list(self.state.completed_categories),
             "questions_completed": len(self.state.answers_received),
         }
@@ -1236,6 +1253,7 @@ class InterviewOrchestrator:
     def process_answer(
         self,
         answer: str,
+        speech_telemetry: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Process one candidate answer and generate the next
@@ -1275,11 +1293,25 @@ class InterviewOrchestrator:
             return self.skip_question()
 
         # =========================================================
+        # SPEECH DELIVERY ANALYTICS
+        # =========================================================
+
+        turn_id = f"q_{self.state.question_number}"
+        speech_analytics = self.speech_analyzer.analyze_turn(
+            transcript=answer,
+            telemetry=speech_telemetry,
+            turn_id=turn_id,
+        )
+        speech_analytics_dict = speech_analytics.to_dict()
+
+        # =========================================================
         # RECORD ANSWER
         # =========================================================
 
         self.state.record_answer(
-            answer
+            answer=answer,
+            speech_telemetry=speech_telemetry,
+            speech_analytics=speech_analytics_dict,
         )
 
         # =========================================================
@@ -1359,6 +1391,7 @@ class InterviewOrchestrator:
                 "llm_assessment": llm_based_assessment,
                 "decision": decision,
                 "action": action,
+                "speech_analytics": speech_analytics_dict,
                 "interview_active": False,
                 "interview_complete": True,
                 "next_question": "",
@@ -1415,6 +1448,7 @@ class InterviewOrchestrator:
                 ),
                 "decision": decision,
                 "action": action,
+                "speech_analytics": speech_analytics_dict,
                 "interview_active": False,
                 "interview_complete": True,
                 "next_question": "",
@@ -1467,6 +1501,7 @@ class InterviewOrchestrator:
             "llm_assessment": llm_based_assessment,
             "decision": decision,
             "action": action,
+            "speech_analytics": speech_analytics_dict,
             "next_question": next_question,
             "next_category": next_category,
             "next_active_category": self.state.active_category,
@@ -1488,13 +1523,15 @@ class InterviewOrchestrator:
     def answer(
         self,
         answer: str,
+        speech_telemetry: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Convenience alias for process_answer().
         """
 
         return self.process_answer(
-            answer
+            answer,
+            speech_telemetry=speech_telemetry,
         )
 
     # =============================================================
@@ -1518,6 +1555,19 @@ class InterviewOrchestrator:
         }
 
     # =============================================================
+    # SPEECH DELIVERY AGGREGATION
+    # =============================================================
+
+    def get_session_speech_analytics(self) -> Dict[str, Any]:
+        """
+        Aggregate speech delivery analytics across all recorded interview turns.
+        Safely handles skipped questions, empty answers, missing telemetry, and early exits.
+        """
+        turns = self.state.conversation_history
+        session_analytics = self.speech_analyzer.aggregate_session(turns)
+        return session_analytics.to_dict()
+
+    # =============================================================
     # GET STATE
     # =============================================================
 
@@ -1528,7 +1578,9 @@ class InterviewOrchestrator:
         Return serialized interview state.
         """
 
-        return self.state.to_dict()
+        state_dict = self.state.to_dict()
+        state_dict["speech_delivery_analytics"] = self.get_session_speech_analytics()
+        return state_dict
 
     # =============================================================
     # GET STRATEGY
